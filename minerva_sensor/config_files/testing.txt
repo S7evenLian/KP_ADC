@@ -1,0 +1,28 @@
+// Type a number for chip ID
+chip_ID: B1-2
+
+// Connection check only?
+connection_check_only: no
+
+// Specify the log directory
+logname: data/D0023 Algae/meas/step_9_mix_of_all_three_d_long_expo.h5
+
+// Select "single", "multiple" or "freq_scan"
+measurement_mode: multiple
+
+// If "single", select "impedance", "optical", "ph" or "isfet_rst"
+measurement_type: impedance
+
+// If "multiple", set the measurement duration in minutes
+measurement_duration: 480
+
+// Want to save raw data?
+save_raw: no
+
+// Want to show the image after each measurement?
+show_image: yes
+
+// Set electrode voltage for pH measurement in mV
+ph_electrode_V: 1600
+
+

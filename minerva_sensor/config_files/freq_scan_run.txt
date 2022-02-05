@@ -1,0 +1,28 @@
+// Type a number for chip ID
+chip_ID: 3
+
+// Connection check only?
+connection_check_only: no
+
+// Specify the log directory
+logname: data/D0020 Diatom/impedance_diatom_dilute_afterscope_covered_freq_scan.h5
+
+// Select "single", "multiple" or "freq_scan"
+measurement_mode: freq_scan
+
+// If "single", select "impedance", "optical", "ph" or "isfet_rst"
+measurement_type: ph
+
+// If "multiple", set the measurement duration in minutes
+measurement_duration: 20
+
+// Want to save raw data?
+save_raw: no
+
+// Want to show the image after each measurement?
+show_image: yes
+
+// Set electrode voltage for pH measurement in mV
+ph_electrode_V: 1600
+
+
