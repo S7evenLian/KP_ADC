@@ -39,7 +39,6 @@ def Measure():
     m.pset('f_sw', 6.25e6)
     m.pset('f_master', 390625)
     m.pset('samplerate', 390625)
-#    m.pset('vectorfrequency', 390625) #12.5e6)
     m.pset('vectorfrequency', 1.25e6) #12.5e6)
     m.pset('ADCbits', 18)
     m.pset('ADCfs', 3.3)
