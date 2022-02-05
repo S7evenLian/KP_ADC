@@ -51,11 +51,11 @@ def Measure():
     m.pset('C_int',5e-12)
     
     # DAC Settings
-    m.pset('V_SW', 0)
-    m.pset('V_CM', 500)    
+    m.pset('V_SW', 0)    
+    m.pset('V_CM', 900)     # steven mod to 900mV for ADC biasing
     m.pset('V_Electrode_Bias', 1500)
-    m.pset('V_STIMU_P', 0)
-    m.pset('V_STIMU_N', 0)   
+    m.pset('V_STIMU_P', 1500)   # the same as in the simulation
+    m.pset('V_STIMU_N', 300)    # the same as in the simulation
     m.pset('V_STBY', 0)
     
     
@@ -99,6 +99,7 @@ def Measure():
     m.StartClkout()
 
     # ~~~~~~~~~~~~~~~~~ Send in scanchain ~~~~~~~~~~~~~~~~~~~~~~~
+    # wait for Kangping to modify scan-chain
     #m.SendRawVector(scan_all_int)
     
     m.ProtectScanPins(False)
@@ -127,10 +128,6 @@ def Measure():
     print('')
     
     # ~~~~~~~~~~~~~~~~~ Reset ADC FIFO ~~~~~~~~~~~~~~~~~~~~~~~
-#    m.SendScanVector_4bit(scan_all_close_sram)
-#    time.sleep(0.1)
-#    m.SendScanVector_4bit(vector_reset)
-#    time.sleep(0.1)
     m.SendRawVector(vector_reset_deselect)
     time.sleep(0.1)
     
@@ -142,21 +139,13 @@ def Measure():
     # measure impedance
     m.UpdateScanChain(scan_all_mea_I)
     time.sleep(1)        
-
-    # do not re-protect scan pins right away. If the vector_clk is slower,
-    # the vectors may take some time to appear.
-    # m.ProtectScanPins(True)
     
     # ~~~~~~~~~~~~~~~~~ Acquire ADC Data ~~~~~~~~~~~~~~~~~~~~~~~    
     m.WaitForDMA(numtransfers)
-    
-    #m.StopADC()
         
     mydata,mybytes = m.GetDataFromMemory(xferbytes)
     print('acquired data')
     print('bytes',mybytes)
-    #for i in range(256):
-    #    print(i, bin(mydata[i]))
     
     # NOTE: dtest and scan_x signals are often faster than the ADC sample rate.
     #       Ensure the signals are slow enough to observe.
@@ -176,157 +165,12 @@ def Measure():
 
     scan_latch_deri = np.diff(scan_latch)
     scan_latch_edge_all_index = np.where(scan_latch_deri == 1)[0]
-    
-    # the first 8 latch is to set the pixl sensing mode
-    start_ind = scan_latch_edge_all_index[-1] - 10
-    
-    # acquire data for each channel to assemble the impeance image, split to 2 images for two phases
-    image_2d_ph1 = np.zeros((512,256))
-    image_2d_ph2 = np.zeros((512,256))
-    
-    
-    for ch in range(8):
-#    ch = 0
-        
-        adcdata_1_ch = adcdata[ch::8]
-        adcdata_1_ch = adcdata_1_ch[start_ind:]
-        sample_clk_1_ch = sample_clk[start_ind:]
-        
-        sample_clk_deri = np.diff(sample_clk_1_ch)
-        sample_clk_edge_all_index = np.where(sample_clk_deri == -1)[0]    
-     
-        # calculate the data,
-        data_1_ch = adcdata_1_ch[sample_clk_edge_all_index-m.pget('Nsamples_integration')] - adcdata_1_ch[sample_clk_edge_all_index]
-        data_1_ch = data_1_ch[0:16*32*512]
-        
-#        for i in sample_clk_edge_all_index[10:12]:
-#            plt.figure(figsize=(12,4))
-#            span=min(100,i-1)
-#            plt.plot(np.arange(-span,span),adcdata_1_ch[i-span:i+span],'k')
-#            plt.plot(-3,adcdata_1_ch[i-3],'.r',markersize=10)
-#            plt.plot(0,adcdata_1_ch[i],'.b',markersize=10)
-#            plt.title('ch=%u, i=%u, f_sw=%u' % (ch,i,m.pget('f_sw')))
-#            plt.show()
-            
-        # drop the first and last data and average every 14 data points
-        data_1_ch_avg = data_1_ch.reshape(-1, 16)
-        data_1_ch_avg = data_1_ch_avg[:,1:-1]
-        
-        data_1_ch_avg_ph1 = np.mean(data_1_ch_avg[:,0::2], axis=1)
-        data_1_ch_avg_ph2 = np.mean(data_1_ch_avg[:,1::2], axis=1)
-        
-        # reshape
-        image_2d_ph1[:, ch*32:(ch+1)*32] = data_1_ch_avg_ph1.reshape(512, 32)  
-        image_2d_ph2[:, ch*32:(ch+1)*32] = data_1_ch_avg_ph2.reshape(512, 32)
-    
-    
-    
-    plt.figure(figsize=(8,4))
-    for ch in range(8):
-        plt.plot(adcdata[ch::8] + ch*0.1)
-    plt.plot(sample_clk*0.1 - 0.2)
-    plt.xlim([50000,50100])
-    plt.title('adcdata 1')
-    plt.show() 
-    
-#    plt.figure(figsize=(8,12))
-#    plt.imshow(image_2d_ph1)
-#    plt.title('impedance image ph1')
-#    plt.colorbar()
-#    plt.show() 
-#    
-#    plt.figure(figsize=(8,12))
-#    plt.imshow(image_2d_ph2)
-#    plt.title('impedance image ph2')
-#    plt.colorbar()
-#    plt.show() 
-#    
-#    with open('data/impedance/image_ph1.npy','wb') as f:
-#        np.save(f, image_2d_ph1)
-#
-#    with open('data/impedance/image_ph2.npy','wb') as f:
-#        np.save(f, image_2d_ph2)
-#
 
-    # if 1:
-    #     fname = r"R:\Eng_Projects\EmbeddedBioelectronics\projects\Minerva\data\Electroplating\Dec_29_2021\current_vref_1500.h5"
-    #     #fname = r"C:\Users\larki\Documents\minerva_data\D0002_minerva_biofilm_1.h5"
-    #     grp_name = 'current'
-    #     m.SaveToLogFile(fname,
-    #                     grp_name,
-    #                     dataset_names=('I_2d_ph1','I_2d_ph2'),
-    #                     datasets=(image_2d_ph1,image_2d_ph2),
-    #                     comments='') 
-    
 
-    # normalize by channel
-    ch0mean = np.mean(image_2d_ph1[-16:, :32])
-    for ch in range(8):
-        image_2d_ph1[:, ch*32:(ch+1)*32] = image_2d_ph1[:, ch*32:(ch+1)*32] / np.mean(image_2d_ph1[-16:, ch*32:(ch+1)*32]) * ch0mean / gain_overall
-        image_2d_ph2[:, ch*32:(ch+1)*32] = image_2d_ph2[:, ch*32:(ch+1)*32] / np.mean(image_2d_ph2[-16:, ch*32:(ch+1)*32]) * ch0mean / gain_overall
-    image_2d_ph1 = np.abs(image_2d_ph1)
-    image_2d_ph2 = np.abs(image_2d_ph2)
-    
-    plt.figure(figsize=(16,8))
-    plt.subplot(1,2,1)
-    plt.imshow(image_2d_ph1,
-               vmin=np.mean(image_2d_ph1)-3*np.std(image_2d_ph1),
-               vmax=np.mean(image_2d_ph1)+1*np.std(image_2d_ph1),
-               cmap='Blues')               
-    plt.title('current ph1 (normalized, Amperes)')
-    plt.colorbar()
-    
-    plt.subplot(1,2,2)
-    plt.imshow(image_2d_ph2,
-               vmin=np.mean(image_2d_ph2)-3*np.std(image_2d_ph2),
-               vmax=np.mean(image_2d_ph2)+1*np.std(image_2d_ph2),
-               cmap='Blues')
-    plt.title('current ph2 (normalized, Amperes)')
-    plt.colorbar()
-    plt.show() 
-
-    plt.figure(figsize=(8,8))
-    plt.imshow(image_2d_ph2[100:200,50:150],
-               vmin=np.mean(image_2d_ph2)-3*np.std(image_2d_ph2),
-               vmax=np.mean(image_2d_ph2)+1*np.std(image_2d_ph2),
-               cmap='Blues')
-    plt.title('current ph2 (normalized, Amperes)')
-    plt.colorbar()
-    plt.show() 
-    
-#    plt.figure(figsize=(8,4))
-#    plt.plot(image_2d_ph2[250,:])
-#    plt.title('row slice')
-#    plt.show() 
-#    
-#    plt.figure(figsize=(8,4))
-#    plt.plot(image_2d_ph2[:,75])
-#    plt.title('col slice')
-#    plt.show() 
-#    
-#    plt.figure(figsize=(8,4))
-#    def autocorr(x):
-#        return np.correlate(x-np.mean(x),x-np.mean(x),mode='full')
-#    plt.plot(autocorr(image_2d_ph2[:,75]))
-#    plt.title('col correlation')
-#    plt.show() 
-    
-
-#    plt.figure(figsize=(8,8))
-#    plt.imshow(correlate2d(image_2d_ph2,image_2d_ph2))
-#    plt.title('2D correlation')
-#    plt.colorbar()
-#    plt.show()     
 
 if __name__ == "__main__":
     
     #print('5 sec delay')
     
     Measure()
-    
-#    for loop in range(60):
-#        print('measure')
-#        Measure()
-#        print('sleeping')
-#        time.sleep(60)
     
