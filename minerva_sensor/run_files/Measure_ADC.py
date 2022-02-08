@@ -35,10 +35,13 @@ def Measure():
     m = minerva(bitfilename=bitfilename)
 
     # board setup
+    f_sw = 3e6
+    f_master = f_sw / 30 / 2
     m.pset('Vdd', 2.15)
-    m.pset('f_sw', 6.25e6)
-    m.pset('f_master', 390625)
-    m.pset('samplerate', 390625)
+    m.pset('f_sw', f_sw)
+    # m.pset('f_master', 390625)
+    m.pset('f_master', f_master)
+    m.pset('samplerate', f_master*2)
     m.pset('vectorfrequency', 1.25e6) #12.5e6)
     m.pset('ADCbits', 18)
     m.pset('ADCfs', 3.3)

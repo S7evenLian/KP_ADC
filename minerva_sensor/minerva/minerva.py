@@ -114,6 +114,24 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         # set SW_CLK and MASTER_CLK dividers, e.g. 100 for 100MHz/(100)=1MHz
         self.xem.SetWireInValue(0x03, (int(100e6/(f_sw*2))<<16) | int(100e6/(f_master*2)), self.NO_MASK)
         time.sleep(0.01)
+    
+
+    def SetClkDividers_Steven(self,f_adc=1e6,f_vector=1e6,f_sw=50e6,f_sw_duty=0.5,f_master=1e6):
+        
+        # set vector_clk_divider, e.g. 100 for 100MHz/(100)=1MHz
+        self.xem.SetWireInValue(0x01, int(100e6/f_vector), self.NO_MASK)
+        time.sleep(0.01)
+        
+        # set adc_clk_divider, e.g. 100 for 100MHz/(100)=1MHz
+        self.xem.SetWireInValue(0x02, int(100e6/f_adc-1), self.NO_MASK)
+        time.sleep(0.01)
+        
+        # set MASTER_CLK dividers, e.g. 100 for 100MHz/(100)=1MHz
+        self.xem.SetWireInValue(0x03, int(100e6/(f_master*2)), self.NO_MASK)
+        
+        # set SW_CLK divider. Separate dividers from 100MHz for each phase of the clock
+        self.xem.SetWireInValue(0x04, (int(100e6/f_sw*f_sw_duty)<<16) | int(100e6/f_sw*(1-f_sw_duty)), self.NO_MASK)
+        time.sleep(0.01)
         
         
     # ------------------------------------------------------
