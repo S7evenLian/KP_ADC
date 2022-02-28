@@ -1167,4 +1167,23 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         scanvals[self.scan_lookup['r_out_en_0']]=1  
         
         
+        return scanvals
+    
+    def Generate_scan_vector_KP_ADC(self):
+        
+        scanvals = np.zeros(len(self.scan_lookup))
+        
+        scanvals[self.scan_lookup['SCAN_BIT_R<0>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<1>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<2>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<3>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<4>']]=1
+#        scanvals[self.scan_lookup['SCAN_BIT_R<5>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<6>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<7>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<8>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<9>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<10>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<11>']]=1
+        
         return scanvals        

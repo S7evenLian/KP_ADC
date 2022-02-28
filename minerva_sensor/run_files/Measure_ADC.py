@@ -46,7 +46,7 @@ def Measure():
     m.pset('ADCbits', 18)
     m.pset('ADCfs', 3.3)
     
-    m.pset('PINOUT_CONFIG',1)    # Minerva_v1 = 0; Minerva_v2 = 1; Sidewinder_v1 = 2
+    m.pset('PINOUT_CONFIG',3)    # Minerva_v1 = 0; Minerva_v2 = 1; Sidewinder_v1 = 2
 
     # todo: DOUBLE CHECK
     m.pset('Nsamples_integration', 3)
@@ -98,41 +98,42 @@ def Measure():
     # ~~~~~~~~~~~~~~~~~ Configure DAC ~~~~~~~~~~~~~~~~~~~~~~~
     m.DAC_setup()
 
-    # ~~~~~~~~~~~~~~~~~ Output Clocks for chip ~~~~~~~~~~~~~~~~~~~~~~~
-    m.StartClkout()
-
     # ~~~~~~~~~~~~~~~~~ Send in scanchain ~~~~~~~~~~~~~~~~~~~~~~~
     # wait for Kangping to modify scan-chain
-    #m.SendRawVector(scan_all_int)
+    scan_chain_update = m.Generate_scan_vector_KP_ADC()
+    m.UpdateScanChain(scan_chain_update)
     
     m.ProtectScanPins(False)
     # this scan vector will set the measurement mode for test col pixels and trigger DTEST_1 Toggle
     
-    # ~~~~~~~~~~~~~~~~~ Set the sensing mode ~~~~~~~~~~~~~~~~~~~~~~~
-    vector_reset = np.zeros(64)
-    vector_reset_deselect = np.zeros(64) + 8  # de-assert reset
-    #scan_all_close_sram = minerva.Generate_scan_vector_close_sram(False)
-    scan_all_mea_I = m.Generate_scan_vector_mea_I()
-    
-    m.SendRawVector(vector_reset)
-    time.sleep(0.02)
-    
-    tstart=time.time()
-
-    print('set all pixels to stimulation and sensing mode')
-    for col_addr in range(256):   
-        
-        # set the sensing mode
-        print('\rgenerating scan vector for col %u   (%2.2f sec)' % (col_addr,time.time()-tstart),end='')        
-        scan_all_set_stimulus_sensing_mode = m.Generate_scan_vector_all_pixel_sensing_stimulus_mode(col_addr)
-        
-        m.UpdateScanChain(scan_all_set_stimulus_sensing_mode)  # send as 32 bit vector
-        time.sleep(0.02)
-    print('')
+#    # ~~~~~~~~~~~~~~~~~ Set the sensing mode ~~~~~~~~~~~~~~~~~~~~~~~
+#    vector_reset = np.zeros(64)
+#    vector_reset_deselect = np.zeros(64) + 8  # de-assert reset
+#    #scan_all_close_sram = minerva.Generate_scan_vector_close_sram(False)
+#    scan_all_mea_I = m.Generate_scan_vector_KP_ADC()
+#    
+#    m.SendRawVector(vector_reset)
+#    time.sleep(0.02)
+#    
+#    tstart=time.time()
+#
+#    print('set all pixels to stimulation and sensing mode')
+#    for col_addr in range(256):   
+#        
+#        # set the sensing mode
+#        print('\rgenerating scan vector for col %u   (%2.2f sec)' % (col_addr,time.time()-tstart),end='')        
+#        scan_all_set_stimulus_sensing_mode = m.Generate_scan_vector_all_pixel_sensing_stimulus_mode(col_addr)
+#        
+#        m.UpdateScanChain(scan_all_set_stimulus_sensing_mode)  # send as 32 bit vector
+#        time.sleep(0.02)
+#    print('')
     
     # ~~~~~~~~~~~~~~~~~ Reset ADC FIFO ~~~~~~~~~~~~~~~~~~~~~~~
-    m.SendRawVector(vector_reset_deselect)
+#    m.SendRawVector(vector_reset_deselect)
     time.sleep(0.1)
+    
+    # ~~~~~~~~~~~~~~~~~ Output Clocks for chip ~~~~~~~~~~~~~~~~~~~~~~~
+    m.StartClkout()
     
     #m.FIFO_Reset()
     m.StopADC()
@@ -140,7 +141,7 @@ def Measure():
     m.StartADC()
         
     # measure impedance
-    m.UpdateScanChain(scan_all_mea_I)
+#    m.UpdateScanChain(scan_all_mea_I)
     time.sleep(1)        
     
     # ~~~~~~~~~~~~~~~~~ Acquire ADC Data ~~~~~~~~~~~~~~~~~~~~~~~    
@@ -161,13 +162,13 @@ def Measure():
     
     adcdata1 = np.bitwise_and(mydata, np.uint32(0x0003FFFF)).astype(np.uint32)   #keep 18 bits
     adcdata2 = np.bitwise_or(adcdata1, (adcdata1&0x00020000 != 0) * np.uint32(0xFFFC0000))       #sign extension from 18 bits
-    adcdata = 2*3.3*adcdata2.view(np.int32)/2**18    # view as signed integer, scale to volts
-
-        
-    sample_clk=dtest_1
-
-    scan_latch_deri = np.diff(scan_latch)
-    scan_latch_edge_all_index = np.where(scan_latch_deri == 1)[0]
+#    adcdata = 2*3.3*adcdata2.view(np.int32)/2**18    # view as signed integer, scale to volts
+#
+#        
+#    sample_clk=dtest_1
+#
+#    scan_latch_deri = np.diff(scan_latch)
+#    scan_latch_edge_all_index = np.where(scan_latch_deri == 1)[0]
 
 
 
