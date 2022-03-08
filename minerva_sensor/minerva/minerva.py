@@ -74,28 +74,28 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         #PINOUT_CONFIG = 2  # Sidewinder v1
         self.xem.SetWireInValue(0x00, int(self.pget('PINOUT_CONFIG')<<18), int(0xF<<18))
 
-        self.GPIO_OutputEnable(32)  # SCAN_CLK
-        self.GPIO_OutputEnable(53)  # SCAN_DIN
-        self.GPIO_OutputEnable(40)  # SCAN_LATCH
-        self.GPIO_OutputEnable(24)  # SCAN_RESET
+        self.GPIO_OutputEnable(51)  # SCAN_CLK
+        self.GPIO_OutputEnable(121)  # SCAN_DIN
+        self.GPIO_OutputEnable(46)  # SCAN_LATCH
+        self.GPIO_OutputEnable(57)  # SCAN_RESET
         
-        self.GPIO_OutputEnable(115)  # DAC_SCK
-        self.GPIO_OutputEnable(107)  # DAC_SDI
-        self.GPIO_OutputEnable(113)  # DAC_CS
-        self.GPIO_OutputEnable(117)  # DAC_LDAC
-        self.GPIO_OutputEnable(114)  # DAC_CLR
+        self.GPIO_OutputEnable(91)  # DAC_SCK
+        self.GPIO_OutputEnable(83)  # DAC_SDI
+        self.GPIO_OutputEnable(90)  # DAC_CS
+        self.GPIO_OutputEnable(87)  # DAC_LDAC
+        self.GPIO_OutputEnable(82)  # DAC_CLR
         
-        self.GPIO_OutputEnable(43)  # SW_CLK
-        self.GPIO_OutputEnable(35)  # MASTER_CLK
+        self.GPIO_OutputEnable(111)  # ADC_CLK
+        self.GPIO_OutputEnable(106)  # SAMPLE_EN
                 
-        self.GPIO_OutputEnable(55)  # ADC_SCLK
-        self.GPIO_OutputEnable(54)  # ADC_CONVST
+#        self.GPIO_OutputEnable(55)  # ADC_SCLK
+#        self.GPIO_OutputEnable(54)  # ADC_CONVST
 
         #self.GPIO_OutputEnable(108)  # AUX_1
         #self.GPIO_Clear(108,True)  # AUX_1=0
                 
-        self.GPIO_OutputEnable(91)  # STIMU_CLK_P
-        self.GPIO_OutputEnable(87)  # STIMU_CLK_N
+#        self.GPIO_OutputEnable(91)  # STIMU_CLK_P
+#        self.GPIO_OutputEnable(87)  # STIMU_CLK_N
 
         
         self.GPIO_UpdateAll()
