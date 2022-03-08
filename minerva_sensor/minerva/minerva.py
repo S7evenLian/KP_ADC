@@ -265,6 +265,28 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         #print('bytes',scan_vector_32bit.nbytes)
         self.SendRawVector(scan_vector_32bit)
         #print('done sending vector', time.time()-tstart)
+        
+        def ADC_Sampling(self,adc_clk_f):
+        # set vector lengths, unit is sec
+        vector_len = 34/adc_clk_f
+        sample_en_pw = 30/adc_clk_f
+        sample_en_start = 2/adc_clk_f
+        adc_clk_pw = 0.5/adc_clk_f
+        
+        # convert to vector length
+        vector_len = int(vector_len * self.pget('vectorfrequency'))
+        sample_en_pw = int(sample_en_pw * self.pget('vectorfrequency'))
+        adc_clk_pw = int(adc_clk_pw * self.pget('vectorfrequency'))
+        sample_en_start = int(sample_en_start * self.pget('vectorfrequency'))
+        
+        # create vector
+        scan_vector_32bit = np.zeros(vector_len,dtype = np.uint32)
+        # sample_en
+        scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] = scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] + (1<<13)
+        # adc_clk
+        scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] = scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] + (1<<13)
+    
+        self.SendRawVector(scan_vector_32bit)
 
 
     def UpdateScanChain(self,scanvals,latchenable=True, resetpulse=False):
