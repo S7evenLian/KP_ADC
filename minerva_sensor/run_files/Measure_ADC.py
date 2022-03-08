@@ -35,9 +35,9 @@ def Measure():
     m = minerva(bitfilename=bitfilename)
 
     # board setup
-    f_sw = 3e6
+    f_sw = 1e5
     f_master = f_sw / 30 / 2
-    m.pset('Vdd', 2.15)
+    m.pset('Vdd', 1.8)
     m.pset('f_sw', f_sw)
     # m.pset('f_master', 390625)
     m.pset('f_master', f_master)
@@ -46,7 +46,7 @@ def Measure():
     m.pset('ADCbits', 18)
     m.pset('ADCfs', 3.3)
     
-    m.pset('PINOUT_CONFIG',3)    # Minerva_v1 = 0; Minerva_v2 = 1; Sidewinder_v1 = 2
+    m.pset('PINOUT_CONFIG',2)    # Minerva_v1 = 0; Minerva_v2 = 1; Sidewinder_v1 = 2
 
     # todo: DOUBLE CHECK
     m.pset('Nsamples_integration', 3)
@@ -68,9 +68,9 @@ def Measure():
     
     
     # Others
-    #m.pset('Row_Code_Clk', '6.1 kHz')
-    #m.pset('Col_Code_Clk', '23.8 Hz')
-    #m.pset('Chopping_Clk', '400 kHz')
+    m.pset('Row_Code_Clk', '6.1 kHz')
+    m.pset('Col_Code_Clk', '23.8 Hz')
+    m.pset('Chopping_Clk', '400 kHz')
     
     # dataset name
     now = datetime.now()
@@ -101,32 +101,10 @@ def Measure():
     # ~~~~~~~~~~~~~~~~~ Send in scanchain ~~~~~~~~~~~~~~~~~~~~~~~
     # wait for Kangping to modify scan-chain
     scan_chain_update = m.Generate_scan_vector_KP_ADC()
-    m.UpdateScanChain(scan_chain_update)
+    m.UpdateScanChain(scan_chain_update, resetpulse = True, latchenable = True)
     
+    # scan_in shared with ADC_CAL_RST
     m.ProtectScanPins(False)
-    # this scan vector will set the measurement mode for test col pixels and trigger DTEST_1 Toggle
-    
-#    # ~~~~~~~~~~~~~~~~~ Set the sensing mode ~~~~~~~~~~~~~~~~~~~~~~~
-#    vector_reset = np.zeros(64)
-#    vector_reset_deselect = np.zeros(64) + 8  # de-assert reset
-#    #scan_all_close_sram = minerva.Generate_scan_vector_close_sram(False)
-#    scan_all_mea_I = m.Generate_scan_vector_KP_ADC()
-#    
-#    m.SendRawVector(vector_reset)
-#    time.sleep(0.02)
-#    
-#    tstart=time.time()
-#
-#    print('set all pixels to stimulation and sensing mode')
-#    for col_addr in range(256):   
-#        
-#        # set the sensing mode
-#        print('\rgenerating scan vector for col %u   (%2.2f sec)' % (col_addr,time.time()-tstart),end='')        
-#        scan_all_set_stimulus_sensing_mode = m.Generate_scan_vector_all_pixel_sensing_stimulus_mode(col_addr)
-#        
-#        m.UpdateScanChain(scan_all_set_stimulus_sensing_mode)  # send as 32 bit vector
-#        time.sleep(0.02)
-#    print('')
     
     # ~~~~~~~~~~~~~~~~~ Reset ADC FIFO ~~~~~~~~~~~~~~~~~~~~~~~
 #    m.SendRawVector(vector_reset_deselect)
@@ -139,6 +117,12 @@ def Measure():
     m.StopADC()
     numtransfers,xferbytes = m.QueueADCAcquisition(sec=6)
     m.StartADC()
+    
+    # ~~~~~~~~~~~~~~~~~ give sample_en waveform ~~~~~~~~~~~~~~~~~~~~~~~
+    adc_clk_f = f_sw
+    for i in range(100):
+        m.ADC_Sampling(adc_clk_f)
+        time.sleep(0.01)
         
     # measure impedance
 #    m.UpdateScanChain(scan_all_mea_I)
