@@ -46,7 +46,7 @@ def Measure():
     m.pset('ADCbits', 18)
     m.pset('ADCfs', 3.3)
     
-    m.pset('PINOUT_CONFIG',2)    # Minerva_v1 = 0; Minerva_v2 = 1; Sidewinder_v1 = 2
+    m.pset('PINOUT_CONFIG',3)    # Minerva_v1 = 0; Minerva_v2 = 1; Sidewinder_v1 = 2
 
     # todo: DOUBLE CHECK
     m.pset('Nsamples_integration', 3)
