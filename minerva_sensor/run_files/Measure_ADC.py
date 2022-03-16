@@ -54,12 +54,12 @@ def Measure():
     m.pset('C_int',5e-12)
     
     # DAC Settings
-    m.pset('V_SW', 0)    
+    m.pset('V_SW', 900)    
     m.pset('V_CM', 900)     # steven mod to 900mV for ADC biasing
     m.pset('V_Electrode_Bias', 1500)
     m.pset('V_STIMU_P', 1500)   # the same as in the simulation
     m.pset('V_STIMU_N', 300)    # the same as in the simulation
-    m.pset('V_STBY', 0)
+    m.pset('V_STBY', 900)
     
     
     gain_swcap = 1  

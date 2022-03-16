@@ -85,7 +85,7 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         self.GPIO_OutputEnable(117)  # DAC_LDAC
         self.GPIO_OutputEnable(114)  # DAC_CLR
         
-        self.GPIO_OutputEnable(43)  # SW_CLK
+        self.GPIO_OutputEnable(111)  # ADC_CLK
         self.GPIO_OutputEnable(35)  # MASTER_CLK
                 
         self.GPIO_OutputEnable(55)  # ADC_SCLK
@@ -100,23 +100,8 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         
         self.GPIO_UpdateAll()
         
-        
-    def SetClkDividers(self,f_adc=1e6,f_vector=1e6,f_sw=50e6,f_master=1e6):
-        
-        # set vector_clk_divider, e.g. 100 for 100MHz/(100)=1MHz
-        self.xem.SetWireInValue(0x01, int(100e6/f_vector), self.NO_MASK)
-        time.sleep(0.01)
-        
-        # set adc_clk_divider, e.g. 100 for 100MHz/(100)=1MHz
-        self.xem.SetWireInValue(0x02, int(100e6/f_adc-1), self.NO_MASK)
-        time.sleep(0.01)
-        
-        # set SW_CLK and MASTER_CLK dividers, e.g. 100 for 100MHz/(100)=1MHz
-        self.xem.SetWireInValue(0x03, (int(100e6/(f_sw*2))<<16) | int(100e6/(f_master*2)), self.NO_MASK)
-        time.sleep(0.01)
-    
 
-    def SetClkDividers_Steven(self,f_adc=1e6,f_vector=1e6,f_sw=50e6,f_sw_duty=0.5,f_master=1e6):
+    def SetClkDividers(self,f_adc=1e6,f_vector=1e6,f_sw=50e6,f_sw_duty=0.5,f_master=1e6):
         
         # set vector_clk_divider, e.g. 100 for 100MHz/(100)=1MHz
         self.xem.SetWireInValue(0x01, int(100e6/f_vector), self.NO_MASK)
@@ -265,30 +250,6 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         #print('bytes',scan_vector_32bit.nbytes)
         self.SendRawVector(scan_vector_32bit)
         #print('done sending vector', time.time()-tstart)
-        
-    def ADC_Sampling(self,adc_clk_f):
-        # set vector lengths, unit is sec
-        vector_len = 34/adc_clk_f
-        sample_en_pw = 30/adc_clk_f
-        sample_en_start = 2/adc_clk_f
-        adc_clk_pw = 0.5/adc_clk_f
-        
-        # convert to vector length
-        vector_len = int(vector_len * self.pget('vectorfrequency'))
-        sample_en_pw = int(sample_en_pw * self.pget('vectorfrequency'))
-        adc_clk_pw = int(adc_clk_pw * self.pget('vectorfrequency'))
-        sample_en_start = int(sample_en_start * self.pget('vectorfrequency'))
-        
-        # create vector
-        scan_vector_32bit = np.zeros(vector_len,dtype = np.uint32)
-        # sample_en
-        scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] = scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] + (1<<13)
-        # adc_clk
-#        for i in range(34):
-#            offset = adc_clk_pw * 2 * i
-#            scan_vector_32bit[offset:offset+adc_clk_pw] = scan_vector_32bit[offset:offset+adc_clk_pw]
-    
-        self.SendRawVector(scan_vector_32bit)
 
 
     def UpdateScanChain(self,scanvals,latchenable=True, resetpulse=False):
@@ -1190,24 +1151,5 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         scanvals[self.scan_lookup['r0_out_1']]=1 
         scanvals[self.scan_lookup['r_out_en_0']]=1  
         
-        
-        return scanvals
-    
-    def Generate_scan_vector_KP_ADC(self):
-        
-        scanvals = np.zeros(len(self.scan_lookup))
-        
-        scanvals[self.scan_lookup['SCAN_BIT_R<0>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<1>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<2>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<3>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<4>']]=1
-#        scanvals[self.scan_lookup['SCAN_BIT_R<5>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<6>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<7>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<8>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<9>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<10>']]=1
-        scanvals[self.scan_lookup['SCAN_BIT_R<11>']]=1
         
         return scanvals        
