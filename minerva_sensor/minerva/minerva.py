@@ -74,28 +74,29 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         #PINOUT_CONFIG = 2  # Sidewinder v1
         self.xem.SetWireInValue(0x00, int(self.pget('PINOUT_CONFIG')<<18), int(0xF<<18))
 
-        self.GPIO_OutputEnable(32)  # SCAN_CLK
-        self.GPIO_OutputEnable(53)  # SCAN_DIN
-        self.GPIO_OutputEnable(40)  # SCAN_LATCH
-        self.GPIO_OutputEnable(24)  # SCAN_RESET
+        self.GPIO_OutputEnable(51)  # SCAN_CLK
+        self.GPIO_OutputEnable(121)  # SCAN_DIN
+        self.GPIO_OutputEnable(46)  # SCAN_LATCH
+        self.GPIO_OutputEnable(57)  # SCAN_RESET
         
-        self.GPIO_OutputEnable(115)  # DAC_SCK
-        self.GPIO_OutputEnable(107)  # DAC_SDI
-        self.GPIO_OutputEnable(113)  # DAC_CS
-        self.GPIO_OutputEnable(117)  # DAC_LDAC
-        self.GPIO_OutputEnable(114)  # DAC_CLR
+        self.GPIO_OutputEnable(91)  # DAC_SCK
+        self.GPIO_OutputEnable(83)  # DAC_SDI
+        self.GPIO_OutputEnable(90)  # DAC_CS
+        self.GPIO_OutputEnable(87)  # DAC_LDAC
+        self.GPIO_OutputEnable(82)  # DAC_CLR
         
         self.GPIO_OutputEnable(111)  # ADC_CLK
-        self.GPIO_OutputEnable(35)  # MASTER_CLK
+        self.GPIO_OutputEnable(106)  # SAMPLE_EN
+        self.GPIO_OutputEnable(118)  # CAL_START
                 
-        self.GPIO_OutputEnable(55)  # ADC_SCLK
-        self.GPIO_OutputEnable(54)  # ADC_CONVST
+#        self.GPIO_OutputEnable(55)  # ADC_SCLK
+#        self.GPIO_OutputEnable(54)  # ADC_CONVST
 
         #self.GPIO_OutputEnable(108)  # AUX_1
         #self.GPIO_Clear(108,True)  # AUX_1=0
                 
-        self.GPIO_OutputEnable(91)  # STIMU_CLK_P
-        self.GPIO_OutputEnable(87)  # STIMU_CLK_N
+#        self.GPIO_OutputEnable(91)  # STIMU_CLK_P
+#        self.GPIO_OutputEnable(87)  # STIMU_CLK_N
 
         
         self.GPIO_UpdateAll()
@@ -126,11 +127,11 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         print('Configuring DAC')
 
         # unmasking DAC pins
-        self.GPIO_Clear(115,False)  # DAC_SCK
-        self.GPIO_Clear(107,False)  # DAC_SDI
-        self.GPIO_Set(113,False)  # DAC_CS
-        self.GPIO_Set(117,False)  # DAC_LDAC
-        self.GPIO_Set(114,False)  # DAC_CLR        
+        self.GPIO_Clear(91,False)  # DAC_SCK
+        self.GPIO_Clear(83,False)  # DAC_SDI
+        self.GPIO_Set(90,False)  # DAC_CS
+        self.GPIO_Set(87,False)  # DAC_LDAC
+        self.GPIO_Set(82,False)  # DAC_CLR        
         self.GPIO_UpdateAll()    
 
         
@@ -159,11 +160,11 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         self.DAC_Config(self.DAC_CMD_WRITE,self.DAC_CH_H,self.pget('V_STBY'))  
     
         # masking DAC pins
-        self.GPIO_Clear(115,True)  # DAC_SCK
-        self.GPIO_Clear(107,True)  # DAC_SDI
-        self.GPIO_Set(113,True)  # DAC_CS
-        self.GPIO_Set(117,True)  # DAC_LDAC
-        self.GPIO_Set(114,True)  # DAC_CLR        
+        self.GPIO_Clear(91,True)  # DAC_SCK
+        self.GPIO_Clear(83,True)  # DAC_SDI
+        self.GPIO_Set(90,True)  # DAC_CS
+        self.GPIO_Set(87,True)  # DAC_LDAC
+        self.GPIO_Set(82,True)  # DAC_CLR        
         self.GPIO_UpdateAll()        
         
     
@@ -285,10 +286,10 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         
     def ProtectScanPins(self,mask):
         # unmasking SCAN pins
-        self.GPIO_Clear(32,mask)  # SCAN_CLK
-        self.GPIO_Clear(53,mask)  # SCAN_DIN        
-        self.GPIO_Clear(40,mask)  # SCAN_LATCH
-        self.GPIO_Set(24,mask)  # SCAN_RESET
+        self.GPIO_Clear(51,mask)  # SCAN_CLK
+        self.GPIO_Clear(121,mask)  # SCAN_DIN        
+        self.GPIO_Clear(46,mask)  # SCAN_LATCH
+        self.GPIO_Set(57,mask)  # SCAN_RESET
         self.GPIO_UpdateAll()  
 
         # pulse scan reset
@@ -389,7 +390,52 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
             grp.create_dataset(name,data=data)
         grp.attrs.update(self.settings)
         hf.close()
-
+        
+    def ADC_Sampling_donotuse(self,adc_clk_f):
+        # set vector lengths, unit is sec
+        vector_len = 34/adc_clk_f
+        sample_en_pw = 30/adc_clk_f
+        sample_en_start = 2/adc_clk_f
+        adc_clk_pw = 0.5/adc_clk_f
+        
+        # convert to vector length
+        vector_len = int(vector_len * self.pget('vectorfrequency'))
+        sample_en_pw = int(sample_en_pw * self.pget('vectorfrequency'))
+        adc_clk_pw = int(adc_clk_pw * self.pget('vectorfrequency'))
+        sample_en_start = int(sample_en_start * self.pget('vectorfrequency'))
+        
+        # create vector
+        scan_vector_32bit = np.zeros(vector_len,dtype = np.uint32)
+        # sample_en
+        scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] = scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] + (1<<13)
+        # adc_clk
+#        for i in range(34):
+#            offset = adc_clk_pw * 2 * i
+#            scan_vector_32bit[offset:offset+adc_clk_pw] = scan_vector_32bit[offset:offset+adc_clk_pw]
+    
+        self.SendRawVector(scan_vector_32bit)
+    
+    def ADC_sample_en(self,adc_clk_f):
+        # set vector lengths, unit is sec
+        vector_len = 34/adc_clk_f
+        sample_en_pw = 30/adc_clk_f
+        sample_en_start = 2/adc_clk_f
+        adc_clk_pw = 0.5/adc_clk_f
+        
+        # convert to vector length
+        vector_len = int(vector_len * self.pget('vectorfrequency'))
+        sample_en_pw = int(sample_en_pw * self.pget('vectorfrequency'))
+        adc_clk_pw = int(adc_clk_pw * self.pget('vectorfrequency'))
+        sample_en_start = int(sample_en_start * self.pget('vectorfrequency'))
+        
+        # create vector
+        scan_vector_32bit = np.zeros(vector_len,dtype = np.uint32)
+        # sample_en
+        scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] = scan_vector_32bit[sample_en_start:sample_en_start+sample_en_pw] + (1<<13)
+        
+        self.SendRawVector(scan_vector_32bit)
+        
+        
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # helper functions for scan vector generation
     # this belongs to the minerva class, not an individual object
@@ -1152,4 +1198,24 @@ class minerva(darkwing.daq):     # inherits from darkwing.daq
         scanvals[self.scan_lookup['r_out_en_0']]=1  
         
         
-        return scanvals        
+        return scanvals
+    
+    
+    def Generate_scan_vector_KP_ADC(self):
+        
+        scanvals = np.zeros(len(self.scan_lookup))
+        
+        scanvals[self.scan_lookup['SCAN_BIT_R<0>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<1>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<2>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<3>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<4>']]=1
+#        scanvals[self.scan_lookup['SCAN_BIT_R<5>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<6>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<7>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<8>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<9>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<10>']]=1
+        scanvals[self.scan_lookup['SCAN_BIT_R<11>']]=1
+        
+        return scanvals   

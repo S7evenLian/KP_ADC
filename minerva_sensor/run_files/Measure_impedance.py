@@ -33,10 +33,11 @@ def Measure(fname=None):
     
     # create antelope daq instance
     m = minerva(bitfilename=bitfilename)
-
+    adc_clk_f = 5e4
+    
     # board setup
     m.pset('Vdd', 2.15)
-    m.pset('f_sw', 1e5)
+    m.pset('f_sw', adc_clk_f)
     m.pset('f_master', 390625)
     m.pset('samplerate', 390625)
 #    m.pset('vectorfrequency', 390625) #12.5e6)
@@ -145,6 +146,15 @@ def Measure(fname=None):
     # the vectors may take some time to appear.
     # m.ProtectScanPins(True)
     
+    # update scanchain for ADC
+    scan_all_set_sensing_mode = m.Generate_scan_vector_KP_ADC()
+    m.UpdateScanChain(scan_all_set_sensing_mode)  # send as 32 bit vector
+    
+    # give sample_en signal
+    for i in range(1000):
+        m.ADC_sample_en(adc_clk_f)
+#        time.sleep(0.005)
+    
     # ~~~~~~~~~~~~~~~~~ Acquire ADC Data ~~~~~~~~~~~~~~~~~~~~~~~    
     m.WaitForDMA(numtransfers)
     
@@ -219,18 +229,18 @@ def Measure(fname=None):
         data_1_ch_avg_ph2 = np.mean(data_1_ch_avg[:,1::2], axis=1)
         
         # reshape
-        image_2d_ph1[:, ch*32:(ch+1)*32] = data_1_ch_avg_ph1.reshape(512, 32)  
-        image_2d_ph2[:, ch*32:(ch+1)*32] = data_1_ch_avg_ph2.reshape(512, 32)
-    
-    
-    
-    plt.figure(figsize=(8,4))
-    for ch in range(8):
-        plt.plot(adcdata[ch::8] + ch*0.1)
-    plt.plot(sample_clk*0.1 - 0.2)
-    plt.xlim([50000,50100])
-    plt.title('adcdata 1')
-    plt.show() 
+#        image_2d_ph1[:, ch*32:(ch+1)*32] = data_1_ch_avg_ph1.reshape(512, 32)  
+#        image_2d_ph2[:, ch*32:(ch+1)*32] = data_1_ch_avg_ph2.reshape(512, 32)
+#    
+#    
+#    
+#    plt.figure(figsize=(8,4))
+#    for ch in range(8):
+#        plt.plot(adcdata[ch::8] + ch*0.1)
+#    plt.plot(sample_clk*0.1 - 0.2)
+#    plt.xlim([50000,50100])
+#    plt.title('adcdata 1')
+#    plt.show() 
     
 #    plt.figure(figsize=(8,12))
 #    plt.imshow(image_2d_ph1)
@@ -264,39 +274,39 @@ def Measure(fname=None):
     
 
     # normalize by channel
-    ch0mean = np.mean(image_2d_ph1[-16:, :32])
-    for ch in range(8):
-        image_2d_ph1[:, ch*32:(ch+1)*32] = image_2d_ph1[:, ch*32:(ch+1)*32] / np.mean(image_2d_ph1[-16:, ch*32:(ch+1)*32]) * ch0mean / gain_overall
-        image_2d_ph2[:, ch*32:(ch+1)*32] = image_2d_ph2[:, ch*32:(ch+1)*32] / np.mean(image_2d_ph2[-16:, ch*32:(ch+1)*32]) * ch0mean / gain_overall
-    image_2d_ph1 = np.abs(image_2d_ph1)
-    image_2d_ph2 = np.abs(image_2d_ph2)
-    
-    plt.figure(figsize=(16,8))
-    plt.subplot(1,2,1)
-    plt.imshow(image_2d_ph1,
-               vmin=np.mean(image_2d_ph1)-3*np.std(image_2d_ph1),
-               vmax=np.mean(image_2d_ph1)+1*np.std(image_2d_ph1),
-               cmap='Blues')               
-    plt.title('impedance ph1 (normalized, Farads)')
-    plt.colorbar()
-    
-    plt.subplot(1,2,2)
-    plt.imshow(image_2d_ph2,
-               vmin=np.mean(image_2d_ph2)-3*np.std(image_2d_ph2),
-               vmax=np.mean(image_2d_ph2)+1*np.std(image_2d_ph2),
-               cmap='Blues')
-    plt.title('impedance ph2 (normalized, Farads)')
-    plt.colorbar()
-    plt.show() 
-
-    plt.figure(figsize=(8,8))
-    plt.imshow(image_2d_ph2[100:200,50:150],
-               vmin=np.mean(image_2d_ph2)-3*np.std(image_2d_ph2),
-               vmax=np.mean(image_2d_ph2)+1*np.std(image_2d_ph2),
-               cmap='Blues')
-    plt.title('impedance ph2 (normalized, Farads)')
-    plt.colorbar()
-    plt.show() 
+#    ch0mean = np.mean(image_2d_ph1[-16:, :32])
+#    for ch in range(8):
+#        image_2d_ph1[:, ch*32:(ch+1)*32] = image_2d_ph1[:, ch*32:(ch+1)*32] / np.mean(image_2d_ph1[-16:, ch*32:(ch+1)*32]) * ch0mean / gain_overall
+#        image_2d_ph2[:, ch*32:(ch+1)*32] = image_2d_ph2[:, ch*32:(ch+1)*32] / np.mean(image_2d_ph2[-16:, ch*32:(ch+1)*32]) * ch0mean / gain_overall
+#    image_2d_ph1 = np.abs(image_2d_ph1)
+#    image_2d_ph2 = np.abs(image_2d_ph2)
+#    
+#    plt.figure(figsize=(16,8))
+#    plt.subplot(1,2,1)
+#    plt.imshow(image_2d_ph1,
+#               vmin=np.mean(image_2d_ph1)-3*np.std(image_2d_ph1),
+#               vmax=np.mean(image_2d_ph1)+1*np.std(image_2d_ph1),
+#               cmap='Blues')               
+#    plt.title('impedance ph1 (normalized, Farads)')
+#    plt.colorbar()
+#    
+#    plt.subplot(1,2,2)
+#    plt.imshow(image_2d_ph2,
+#               vmin=np.mean(image_2d_ph2)-3*np.std(image_2d_ph2),
+#               vmax=np.mean(image_2d_ph2)+1*np.std(image_2d_ph2),
+#               cmap='Blues')
+#    plt.title('impedance ph2 (normalized, Farads)')
+#    plt.colorbar()
+#    plt.show() 
+#
+#    plt.figure(figsize=(8,8))
+#    plt.imshow(image_2d_ph2[100:200,50:150],
+#               vmin=np.mean(image_2d_ph2)-3*np.std(image_2d_ph2),
+#               vmax=np.mean(image_2d_ph2)+1*np.std(image_2d_ph2),
+#               cmap='Blues')
+#    plt.title('impedance ph2 (normalized, Farads)')
+#    plt.colorbar()
+#    plt.show() 
     
 #    plt.figure(figsize=(8,4))
 #    plt.plot(image_2d_ph2[250,:])
